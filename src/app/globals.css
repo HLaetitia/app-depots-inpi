@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-uf-button: #97d5f6;
+  --color-uf-button-hover: #008ebe;
+  --color-uf-button-text: #ffffff;
+  --color-uf-title: #008ebe;
+  --color-uf-bg: #f7f9fc;
+  --color-uf-card: #ffffff;
+  --color-uf-text: #1e293b;
+  --color-uf-text-muted: #64748b;
+  --color-uf-sidebar: #ffffff;
+  --color-uf-border: #e2e8f0;
+  --color-uf-bg-dark: #0f172a;
+  --color-uf-card-dark: #1e293b;
+  --color-uf-text-dark: #e2e8f0;
+  --color-uf-text-muted-dark: #94a3b8;
+  --color-uf-sidebar-dark: #1e293b;
+  --color-uf-border-dark: #334155;
+  --color-uf-title-dark: #97d5f6;
+  --color-uf-input-bg: #ffffff;
+  --color-uf-input-bg-dark: #0f172a;
+}
+
+body {
+  background-color: var(--color-uf-bg);
+  color: var(--color-uf-text);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.dark body {
+  background-color: var(--color-uf-bg-dark);
+  color: var(--color-uf-text-dark);
+}
+
+/* Statut badges */
+.badge-brouillon {
+  background-color: #e2e8f0;
+  color: #475569;
+}
+.dark .badge-brouillon {
+  background-color: #334155;
+  color: #94a3b8;
+}
+.badge-en-traitement {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+.dark .badge-en-traitement {
+  background-color: #1e3a5f;
+  color: #93c5fd;
+}
+.badge-valide {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+.dark .badge-valide {
+  background-color: #064e3b;
+  color: #6ee7b7;
+}
+.badge-rejete {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+.dark .badge-rejete {
+  background-color: #7f1d1d;
+  color: #fca5a5;
+}
