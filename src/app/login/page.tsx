@@ -18,6 +18,8 @@ export default function LoginPage() {
   // Mot de passe oublié
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState("");
   const CONTACT_EMAIL = "contact@urgencesformalites.fr";
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -49,14 +51,28 @@ export default function LoginPage() {
     }
   };
 
-  const handleForgotPassword = () => {
-    // Envoi automatique à contact@urgencesformalites.fr
-    setForgotSent(true);
+  const handleForgotPassword = async () => {
+    setForgotLoading(true);
+    setForgotError("");
+    try {
+      const res = await fetch("/api/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifiant: email.trim() || undefined }),
+      });
+      if (!res.ok) throw new Error("Erreur serveur");
+      setForgotSent(true);
+    } catch {
+      setForgotError("Impossible d'envoyer l'email. Réessayez plus tard.");
+    } finally {
+      setForgotLoading(false);
+    }
   };
 
   const closeForgotModal = () => {
     setShowForgotModal(false);
     setForgotSent(false);
+    setForgotError("");
   };
 
   return (
@@ -136,8 +152,8 @@ export default function LoginPage() {
               <Button variant="secondary" onClick={closeForgotModal}>
                 Annuler
               </Button>
-              <Button onClick={handleForgotPassword}>
-                Envoyer le lien
+              <Button onClick={handleForgotPassword} disabled={forgotLoading}>
+                {forgotLoading ? "Envoi en cours..." : "Envoyer le lien"}
               </Button>
             </>
           )
@@ -181,6 +197,9 @@ export default function LoginPage() {
                 {CONTACT_EMAIL}
               </p>
             </div>
+            {forgotError && (
+              <p className="text-sm text-red-500 text-center">{forgotError}</p>
+            )}
           </div>
         )}
       </Modal>
