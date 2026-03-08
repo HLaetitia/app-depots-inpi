@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Modal } from "@/components/ui/Modal";
-import { mockUsers } from "@/lib/mock-data";
+import { getUsers, addUser as addUserStore, updateUser as updateUserStore, deleteUser as deleteUserStore } from "@/lib/store";
 import type { User, Role } from "@/types";
 
 // ─── Formulaire vierge ───
@@ -36,7 +36,7 @@ export default function ProfilsPage() {
   // Utilisateur connecté
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   // Liste des profils
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
   // Modales
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -46,6 +46,7 @@ export default function ProfilsPage() {
   const [formError, setFormError] = useState("");
 
   useEffect(() => {
+    setUsers(getUsers());
     const stored = localStorage.getItem("uf-user");
     if (stored) {
       try {
@@ -135,27 +136,20 @@ export default function ProfilsPage() {
 
     if (editingUser) {
       // Modification
+      const updates: Partial<User> = {
+        prenom: form.prenom.trim(),
+        nom: form.nom.trim(),
+        email: form.email.trim(),
+        telephone: form.telephone.trim() || undefined,
+        identifiant: form.identifiant.trim() || editingUser.identifiant,
+        role: form.role,
+      };
+      updateUserStore(editingUser.id, updates);
       setUsers((prev) =>
         prev.map((u) =>
-          u.id === editingUser.id
-            ? {
-                ...u,
-                prenom: form.prenom.trim(),
-                nom: form.nom.trim(),
-                email: form.email.trim(),
-                telephone: form.telephone.trim() || undefined,
-                identifiant: form.identifiant.trim() || u.identifiant,
-                role: form.role,
-                // Si un nouveau mot de passe est renseigné, on le met à jour (simulation)
-                ...(form.password.trim() ? {} : {}),
-              }
-            : u
+          u.id === editingUser.id ? { ...u, ...updates } : u
         )
       );
-      // Simulation : si un mot de passe est renseigné, on le "met à jour"
-      if (form.password.trim()) {
-        console.log(`[Simulation] Mot de passe modifié pour ${editingUser.prenom} ${editingUser.nom}`);
-      }
     } else {
       // Création
       const newUser: User = {
@@ -167,6 +161,7 @@ export default function ProfilsPage() {
         identifiant: form.identifiant.trim(),
         role: form.role,
       };
+      addUserStore(newUser);
       setUsers((prev) => [...prev, newUser]);
     }
 
@@ -178,6 +173,7 @@ export default function ProfilsPage() {
   // ─── Supprimer ───
   const handleDelete = () => {
     if (!deleteTarget) return;
+    deleteUserStore(deleteTarget.id);
     setUsers((prev) => prev.filter((u) => u.id !== deleteTarget.id));
     setDeleteTarget(null);
   };

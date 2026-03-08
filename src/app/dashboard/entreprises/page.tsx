@@ -1,19 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Building2, Search, Trash2, X } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { mockEntreprises, mockFormalites } from "@/lib/mock-data";
+import { getEntreprises, deleteEntreprise as deleteEntrepriseStore, getFormalites } from "@/lib/store";
 import { formatCurrency } from "@/lib/utils";
-import type { Entreprise } from "@/types";
+import type { Entreprise, Formalite } from "@/types";
 
 export default function EntreprisesPage() {
   const [search, setSearch] = useState("");
-  const [entreprises, setEntreprises] = useState<Entreprise[]>(mockEntreprises);
+  const [entreprises, setEntreprises] = useState<Entreprise[]>([]);
+  const [allFormalites, setAllFormalites] = useState<Formalite[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Entreprise | null>(null);
+
+  useEffect(() => {
+    setEntreprises(getEntreprises());
+    setAllFormalites(getFormalites());
+  }, []);
 
   const filtered = entreprises.filter((e) => {
     if (!search) return true;
@@ -27,6 +33,7 @@ export default function EntreprisesPage() {
 
   const handleDelete = () => {
     if (!deleteTarget) return;
+    deleteEntrepriseStore(deleteTarget.id);
     setEntreprises((prev) => prev.filter((e) => e.id !== deleteTarget.id));
     setDeleteTarget(null);
   };
@@ -78,7 +85,7 @@ export default function EntreprisesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((entreprise) => {
-            const formaliteCount = mockFormalites.filter(
+            const formaliteCount = allFormalites.filter(
               (f) => f.entrepriseId === entreprise.id
             ).length;
 

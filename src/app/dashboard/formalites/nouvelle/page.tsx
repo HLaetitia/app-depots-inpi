@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { addFormalite, getFormalites } from "@/lib/store";
+import type { Formalite, TypeFormalite, StatutFormalite } from "@/types";
 import Link from "next/link";
 
 const typeFormaliteOptions = [
@@ -90,15 +92,37 @@ export default function NouvelleFormalitePage() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
   };
 
+  const createFormaliteFromForm = (statut: StatutFormalite): void => {
+    const existing = getFormalites();
+    const nextNum = String(existing.length + 1).padStart(3, "0");
+    const now = new Date().toISOString().slice(0, 10);
+
+    const newFormalite: Formalite = {
+      id: `f-${Date.now()}`,
+      reference: `UF-${new Date().getFullYear()}-${nextNum}`,
+      type: formData.type as TypeFormalite,
+      statut,
+      entrepriseId: "",
+      entrepriseDenomination: formData.denomination || "Nouvelle entreprise",
+      cabinet: formData.cabinetNom || "Non renseigné",
+      description: `${formData.type} — ${formData.denomination}`,
+      dateCreation: now,
+      dateSoumission: statut === "en-traitement" ? now : undefined,
+      formaliste: "Laëtitia Hacene",
+    };
+
+    addFormalite(newFormalite);
+  };
+
   const handleSaveDraft = () => {
-    alert("Brouillon enregistré avec succès (simulation)");
-    router.push("/dashboard");
+    createFormaliteFromForm("brouillon");
+    router.push("/dashboard/formalites");
   };
 
   const handleSubmitINPI = (e: React.FormEvent) => {
     e.preventDefault();
-    alert("Dossier INPI préparé avec succès (simulation)");
-    router.push("/dashboard");
+    createFormaliteFromForm("en-traitement");
+    router.push("/dashboard/formalites");
   };
 
   return (

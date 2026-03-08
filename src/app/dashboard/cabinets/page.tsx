@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Briefcase,
   Building2,
@@ -21,11 +21,14 @@ import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { Badge } from "@/components/ui/Badge";
 import {
-  mockCabinets,
-  mockFormalites,
-  mockEntreprises,
-} from "@/lib/mock-data";
-import type { Cabinet } from "@/types";
+  getCabinets,
+  addCabinet as addCabinetStore,
+  updateCabinet as updateCabinetStore,
+  deleteCabinet as deleteCabinetStore,
+  getFormalites,
+  getEntreprises,
+} from "@/lib/store";
+import type { Cabinet, Formalite, Entreprise } from "@/types";
 import {
   TYPE_FORMALITE_LABELS,
   STATUT_FORMALITE_LABELS,
@@ -39,7 +42,9 @@ const emptyForm = {
 };
 
 export default function CabinetsPage() {
-  const [cabinets, setCabinets] = useState<Cabinet[]>(mockCabinets);
+  const [cabinets, setCabinets] = useState<Cabinet[]>([]);
+  const [allFormalites, setAllFormalites] = useState<Formalite[]>([]);
+  const [allEntreprises, setAllEntreprises] = useState<Entreprise[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedCabinet, setExpandedCabinet] = useState<string | null>(null);
 
@@ -49,6 +54,12 @@ export default function CabinetsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Cabinet | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState("");
+
+  useEffect(() => {
+    setCabinets(getCabinets());
+    setAllFormalites(getFormalites());
+    setAllEntreprises(getEntreprises());
+  }, []);
 
   // Filtrage par recherche
   const filteredCabinets = useMemo(() => {
@@ -64,15 +75,15 @@ export default function CabinetsPage() {
 
   // Regrouper formalités et entreprises par cabinet
   const getCabinetFormalites = (cabinetNom: string) =>
-    mockFormalites.filter((f) => f.cabinet === cabinetNom);
+    allFormalites.filter((f) => f.cabinet === cabinetNom);
 
   const getCabinetEntreprises = (cabinetNom: string) => {
     const entrepriseIds = new Set(
-      mockFormalites
+      allFormalites
         .filter((f) => f.cabinet === cabinetNom)
         .map((f) => f.entrepriseId)
     );
-    return mockEntreprises.filter((e) => entrepriseIds.has(e.id));
+    return allEntreprises.filter((e) => entrepriseIds.has(e.id));
   };
 
   // Toggle expand
@@ -118,16 +129,15 @@ export default function CabinetsPage() {
     }
 
     if (editingCabinet) {
+      const updates = {
+        nom: form.nom.trim(),
+        telephone: form.telephone.trim() || undefined,
+        email: form.email.trim() || undefined,
+      };
+      updateCabinetStore(editingCabinet.id, updates);
       setCabinets((prev) =>
         prev.map((c) =>
-          c.id === editingCabinet.id
-            ? {
-                ...c,
-                nom: form.nom.trim(),
-                telephone: form.telephone.trim() || undefined,
-                email: form.email.trim() || undefined,
-              }
-            : c
+          c.id === editingCabinet.id ? { ...c, ...updates } : c
         )
       );
     } else {
@@ -137,6 +147,7 @@ export default function CabinetsPage() {
         telephone: form.telephone.trim() || undefined,
         email: form.email.trim() || undefined,
       };
+      addCabinetStore(newCabinet);
       setCabinets((prev) => [...prev, newCabinet]);
     }
 
@@ -148,6 +159,7 @@ export default function CabinetsPage() {
   // ─── Supprimer ───
   const handleDelete = () => {
     if (!deleteTarget) return;
+    deleteCabinetStore(deleteTarget.id);
     setCabinets((prev) => prev.filter((c) => c.id !== deleteTarget.id));
     setDeleteTarget(null);
   };

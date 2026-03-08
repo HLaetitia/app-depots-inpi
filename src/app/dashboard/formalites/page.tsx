@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Plus, Search, FileText, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { Modal } from "@/components/ui/Modal";
-import { mockFormalites } from "@/lib/mock-data";
+import { getFormalites, deleteFormalite as deleteFormaliteStore } from "@/lib/store";
 import { formatDate } from "@/lib/utils";
 import {
   TYPE_FORMALITE_LABELS,
@@ -22,8 +22,12 @@ export default function FormalitesPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [statutFilter, setStatutFilter] = useState("");
-  const [formalites, setFormalites] = useState(mockFormalites);
+  const [formalites, setFormalites] = useState<Formalite[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Formalite | null>(null);
+
+  useEffect(() => {
+    setFormalites(getFormalites());
+  }, []);
 
   const filtered = formalites.filter((f) => {
     const matchSearch =
@@ -38,6 +42,7 @@ export default function FormalitesPage() {
 
   const handleDelete = () => {
     if (!deleteTarget) return;
+    deleteFormaliteStore(deleteTarget.id);
     setFormalites((prev) => prev.filter((f) => f.id !== deleteTarget.id));
     setDeleteTarget(null);
   };

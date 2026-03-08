@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Clock,
@@ -16,18 +16,22 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { mockFormalites } from "@/lib/mock-data";
+import { getFormalites, deleteFormalite } from "@/lib/store";
 import { formatDate } from "@/lib/utils";
 import { TYPE_FORMALITE_LABELS } from "@/types";
 import type { Formalite } from "@/types";
 
 export default function DashboardPage() {
-  const [formalites, setFormalites] = useState<Formalite[]>(
-    [...mockFormalites].sort((a, b) =>
-      b.dateCreation.localeCompare(a.dateCreation)
-    )
-  );
+  const [formalites, setFormalites] = useState<Formalite[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Formalite | null>(null);
+
+  useEffect(() => {
+    setFormalites(
+      getFormalites().sort((a, b) =>
+        b.dateCreation.localeCompare(a.dateCreation)
+      )
+    );
+  }, []);
 
   // Stats dynamiques
   const stats = [
@@ -63,6 +67,7 @@ export default function DashboardPage() {
 
   const handleDelete = () => {
     if (!deleteTarget) return;
+    deleteFormalite(deleteTarget.id);
     setFormalites((prev) => prev.filter((f) => f.id !== deleteTarget.id));
     setDeleteTarget(null);
   };
