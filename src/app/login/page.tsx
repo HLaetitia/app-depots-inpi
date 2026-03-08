@@ -17,8 +17,8 @@ export default function LoginPage() {
 
   // Mot de passe oublié
   const [showForgotModal, setShowForgotModal] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
+  const CONTACT_EMAIL = "contact@urgencesformalites.fr";
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,14 +50,12 @@ export default function LoginPage() {
   };
 
   const handleForgotPassword = () => {
-    if (!forgotEmail.trim()) return;
-    // Simulation envoi email
+    // Envoi automatique à contact@urgencesformalites.fr
     setForgotSent(true);
   };
 
   const closeForgotModal = () => {
     setShowForgotModal(false);
-    setForgotEmail("");
     setForgotSent(false);
   };
 
@@ -86,7 +84,7 @@ export default function LoginPage() {
             <Input
               label="Identifiant ou email"
               type="text"
-              placeholder="Ex : l.hacene ou contact@urgencesformalites.fr"
+              placeholder="exemple@urgencesformalites.fr"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -163,26 +161,26 @@ export default function LoginPage() {
               </svg>
             </div>
             <p className="text-sm text-uf-text dark:text-uf-text-dark font-medium">
-              Email envoyé !
+              Demande envoyée !
             </p>
             <p className="text-xs text-uf-text-muted dark:text-uf-text-muted-dark mt-1">
-              Un lien de réinitialisation a été envoyé à{" "}
-              <strong>{forgotEmail}</strong>. Vérifiez votre boîte de réception.
+              Un email de réinitialisation a été envoyé à{" "}
+              <strong>{CONTACT_EMAIL}</strong>.
+              <br />
+              Vérifiez votre boîte de réception.
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             <p className="text-sm text-uf-text dark:text-uf-text-dark">
-              Entrez votre adresse email. Vous recevrez un lien pour
-              réinitialiser votre mot de passe.
+              Un lien de réinitialisation de mot de passe sera envoyé à
+              l&apos;adresse suivante :
             </p>
-            <Input
-              label="Adresse email"
-              type="email"
-              placeholder="contact@urgencesformalites.fr"
-              value={forgotEmail}
-              onChange={(e) => setForgotEmail(e.target.value)}
-            />
+            <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-uf-border dark:border-uf-border-dark text-center">
+              <p className="text-sm font-medium text-uf-title dark:text-uf-title-dark">
+                {CONTACT_EMAIL}
+              </p>
+            </div>
           </div>
         )}
       </Modal>
