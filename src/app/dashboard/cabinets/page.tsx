@@ -502,7 +502,7 @@ export default function CabinetsPage() {
               </div>
             </div>
             <p className="text-xs text-red-500">
-              Les formalités et entreprises associées ne seront pas supprimées.
+              Cette action est irréversible. Les formalités associées seront également supprimées.
             </p>
           </div>
         )}

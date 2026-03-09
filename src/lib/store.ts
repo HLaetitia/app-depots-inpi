@@ -129,6 +129,10 @@ export function updateEntreprise(
 }
 
 export function deleteEntreprise(id: string): void {
+  // Cascade : supprimer les formalités liées à cette entreprise
+  const formalites = getFormalites().filter((f) => f.entrepriseId !== id);
+  writeStore(KEYS.formalites, formalites);
+  // Supprimer l'entreprise
   const list = getEntreprises().filter((e) => e.id !== id);
   writeStore(KEYS.entreprises, list);
 }
@@ -156,6 +160,14 @@ export function updateCabinet(id: string, updates: Partial<Cabinet>): void {
 }
 
 export function deleteCabinet(id: string): void {
+  // Trouver le nom du cabinet avant suppression (pour cascade)
+  const cabinet = getCabinets().find((c) => c.id === id);
+  if (cabinet) {
+    // Cascade : supprimer les formalités liées à ce cabinet
+    const formalites = getFormalites().filter((f) => f.cabinet !== cabinet.nom);
+    writeStore(KEYS.formalites, formalites);
+  }
+  // Supprimer le cabinet
   const list = getCabinets().filter((c) => c.id !== id);
   writeStore(KEYS.cabinets, list);
 }

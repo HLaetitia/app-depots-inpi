@@ -204,7 +204,7 @@ export default function EntreprisesPage() {
               </div>
             </div>
             <p className="text-xs text-red-500">
-              Cette action est irréversible. Les formalités associées ne seront pas supprimées.
+              Cette action est irréversible. Les formalités associées seront également supprimées.
             </p>
           </div>
         )}
