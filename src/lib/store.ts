@@ -52,6 +52,25 @@ function ensureInitialized(): void {
     writeStore(KEYS.users, mockUsers);
     localStorage.setItem(KEYS.initialized, "true");
   }
+  // Migration : ajouter les mots de passe aux utilisateurs existants
+  migratePasswords();
+}
+
+function migratePasswords(): void {
+  const users = readStore<User[]>(KEYS.users);
+  if (!users) return;
+  let changed = false;
+  const updated = users.map((u) => {
+    if (!u.password) {
+      const mockUser = mockUsers.find((m) => m.id === u.id);
+      if (mockUser?.password) {
+        changed = true;
+        return { ...u, password: mockUser.password };
+      }
+    }
+    return u;
+  });
+  if (changed) writeStore(KEYS.users, updated);
 }
 
 // ════════════════════════════════════════════════════

@@ -45,8 +45,9 @@ function LoginForm() {
       return;
     }
 
-    // Vérification du mot de passe (pour l'instant accepte "admin" comme MDP par défaut)
-    if (password === "admin") {
+    // Vérification du mot de passe (mot de passe stocké ou "admin" par défaut)
+    const userPassword = user.password || "admin";
+    if (password === userPassword) {
       localStorage.setItem("uf-user", JSON.stringify(user));
       router.push(redirectTo);
     } else {

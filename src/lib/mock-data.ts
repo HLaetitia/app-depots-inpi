@@ -8,6 +8,7 @@ export const mockUsers: User[] = [
     email: "contact@urgencesformalites.fr",
     telephone: "06 12 34 56 78",
     identifiant: "l.hacene",
+    password: "UrgForm@paris75!!",
     role: "admin",
   },
   {
@@ -17,6 +18,7 @@ export const mockUsers: User[] = [
     email: "quixline@gmail.com",
     telephone: "06 98 76 54 32",
     identifiant: "a.hacene",
+    password: "admin",
     role: "admin",
   },
   {
@@ -26,6 +28,7 @@ export const mockUsers: User[] = [
     email: "sophie.martin@urgencesformalites.fr",
     telephone: "06 11 22 33 44",
     identifiant: "s.martin",
+    password: "admin",
     role: "formaliste",
   },
   {
@@ -35,6 +38,7 @@ export const mockUsers: User[] = [
     email: "julien.durand@urgencesformalites.fr",
     telephone: "06 55 66 77 88",
     identifiant: "j.durand",
+    password: "admin",
     role: "formaliste",
   },
 ];
