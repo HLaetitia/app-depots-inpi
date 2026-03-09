@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
@@ -9,8 +9,10 @@ import { Modal } from "@/components/ui/Modal";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { getUsers } from "@/lib/store";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -45,7 +47,7 @@ export default function LoginPage() {
     // Vérification du mot de passe (pour l'instant accepte "admin" comme MDP par défaut)
     if (password === "admin") {
       localStorage.setItem("uf-user", JSON.stringify(user));
-      router.push("/dashboard");
+      router.push(redirectTo);
     } else {
       setError("Mot de passe incorrect");
     }
@@ -207,5 +209,13 @@ export default function LoginPage() {
         )}
       </Modal>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 
@@ -11,16 +11,17 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const user = localStorage.getItem("uf-user");
     if (!user) {
-      router.replace("/login");
+      router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
     } else {
       setIsReady(true);
     }
-  }, [router]);
+  }, [router, pathname]);
 
   if (!isReady) {
     return (
