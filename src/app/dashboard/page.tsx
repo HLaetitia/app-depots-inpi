@@ -26,11 +26,19 @@ export default function DashboardPage() {
   const [deleteTarget, setDeleteTarget] = useState<Formalite | null>(null);
 
   useEffect(() => {
-    setFormalites(
-      getFormalites().sort((a, b) =>
-        b.dateCreation.localeCompare(a.dateCreation)
-      )
-    );
+    const load = () =>
+      setFormalites(
+        getFormalites().sort((a, b) =>
+          b.dateCreation.localeCompare(a.dateCreation)
+        )
+      );
+    load();
+    window.addEventListener("focus", load);
+    window.addEventListener("store-updated", load);
+    return () => {
+      window.removeEventListener("focus", load);
+      window.removeEventListener("store-updated", load);
+    };
   }, []);
 
   // Stats dynamiques

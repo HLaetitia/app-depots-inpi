@@ -17,8 +17,17 @@ export default function EntreprisesPage() {
   const [deleteTarget, setDeleteTarget] = useState<Entreprise | null>(null);
 
   useEffect(() => {
-    setEntreprises(getEntreprises());
-    setAllFormalites(getFormalites());
+    const load = () => {
+      setEntreprises(getEntreprises());
+      setAllFormalites(getFormalites());
+    };
+    load();
+    window.addEventListener("focus", load);
+    window.addEventListener("store-updated", load);
+    return () => {
+      window.removeEventListener("focus", load);
+      window.removeEventListener("store-updated", load);
+    };
   }, []);
 
   const filtered = entreprises.filter((e) => {

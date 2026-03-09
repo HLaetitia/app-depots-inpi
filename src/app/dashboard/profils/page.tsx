@@ -46,15 +46,24 @@ export default function ProfilsPage() {
   const [formError, setFormError] = useState("");
 
   useEffect(() => {
-    setUsers(getUsers());
-    const stored = localStorage.getItem("uf-user");
-    if (stored) {
-      try {
-        setCurrentUser(JSON.parse(stored));
-      } catch {
-        // ignore
+    const load = () => {
+      setUsers(getUsers());
+      const stored = localStorage.getItem("uf-user");
+      if (stored) {
+        try {
+          setCurrentUser(JSON.parse(stored));
+        } catch {
+          // ignore
+        }
       }
-    }
+    };
+    load();
+    window.addEventListener("focus", load);
+    window.addEventListener("store-updated", load);
+    return () => {
+      window.removeEventListener("focus", load);
+      window.removeEventListener("store-updated", load);
+    };
   }, []);
 
   // ─── Garde admin ───

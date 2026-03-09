@@ -26,7 +26,14 @@ export default function FormalitesPage() {
   const [deleteTarget, setDeleteTarget] = useState<Formalite | null>(null);
 
   useEffect(() => {
-    setFormalites(getFormalites());
+    const load = () => setFormalites(getFormalites());
+    load();
+    window.addEventListener("focus", load);
+    window.addEventListener("store-updated", load);
+    return () => {
+      window.removeEventListener("focus", load);
+      window.removeEventListener("store-updated", load);
+    };
   }, []);
 
   const filtered = formalites.filter((f) => {

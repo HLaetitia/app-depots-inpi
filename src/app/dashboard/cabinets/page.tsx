@@ -56,9 +56,18 @@ export default function CabinetsPage() {
   const [formError, setFormError] = useState("");
 
   useEffect(() => {
-    setCabinets(getCabinets());
-    setAllFormalites(getFormalites());
-    setAllEntreprises(getEntreprises());
+    const load = () => {
+      setCabinets(getCabinets());
+      setAllFormalites(getFormalites());
+      setAllEntreprises(getEntreprises());
+    };
+    load();
+    window.addEventListener("focus", load);
+    window.addEventListener("store-updated", load);
+    return () => {
+      window.removeEventListener("focus", load);
+      window.removeEventListener("store-updated", load);
+    };
   }, []);
 
   // Filtrage par recherche

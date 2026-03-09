@@ -36,6 +36,8 @@ function writeStore<T>(key: string, data: T): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(key, JSON.stringify(data));
+    // Notifier les autres composants du changement
+    window.dispatchEvent(new Event("store-updated"));
   } catch {
     console.error(`[Store] Erreur écriture localStorage pour ${key}`);
   }
