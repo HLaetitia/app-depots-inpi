@@ -62,7 +62,10 @@ function migratePasswords(): void {
   let changed = false;
   const updated = users.map((u) => {
     if (!u.password) {
-      const mockUser = mockUsers.find((m) => m.id === u.id);
+      // Chercher par id OU par email pour robustesse
+      const mockUser = mockUsers.find(
+        (m) => m.id === u.id || m.email.toLowerCase() === u.email.toLowerCase()
+      );
       if (mockUser?.password) {
         changed = true;
         return { ...u, password: mockUser.password };
