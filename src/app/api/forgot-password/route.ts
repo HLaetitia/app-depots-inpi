@@ -5,7 +5,10 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
   try {
-    const { identifiant } = await request.json();
+    const { identifiant, userEmail } = await request.json();
+
+    const origin = request.headers.get("origin") || "https://app-inpi.urgencesformalites.fr";
+    const resetLink = `${origin}/dashboard/profils`;
 
     const { data, error } = await resend.emails.send({
       from: "Urgences Formalités <onboarding@resend.dev>",
@@ -21,8 +24,17 @@ export async function POST(request: Request) {
             <p style="margin: 0; color: #1e293b;">
               Un utilisateur a demandé la réinitialisation de son mot de passe sur l'application de dépôt INPI.
             </p>
-            ${identifiant ? `<p style="margin: 10px 0 0; color: #1e293b;"><strong>Identifiant / Email :</strong> ${identifiant}</p>` : ""}
+            ${identifiant ? `<p style="margin: 10px 0 0; color: #1e293b;"><strong>Identifiant :</strong> ${identifiant}</p>` : ""}
+            ${userEmail ? `<p style="margin: 10px 0 0; color: #1e293b;"><strong>Email du demandeur :</strong> <a href="mailto:${userEmail}" style="color: #008ebe;">${userEmail}</a></p>` : ""}
           </div>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetLink}" style="display: inline-block; background-color: #008ebe; color: white; text-decoration: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; font-size: 14px;">
+              Réinitialiser le mot de passe
+            </a>
+          </div>
+          <p style="color: #64748b; font-size: 13px; text-align: center;">
+            Ce lien vous redirige vers la page de gestion des profils pour modifier le mot de passe.
+          </p>
           <p style="color: #64748b; font-size: 13px; text-align: center; margin-top: 30px;">
             Application Dépôts INPI — Urgences Formalités
           </p>

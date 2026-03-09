@@ -58,7 +58,10 @@ export default function LoginPage() {
       const res = await fetch("/api/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifiant: email.trim() || undefined }),
+        body: JSON.stringify({
+          identifiant: email.trim() || undefined,
+          userEmail: email.trim() || undefined,
+        }),
       });
       if (!res.ok) throw new Error("Erreur serveur");
       setForgotSent(true);
