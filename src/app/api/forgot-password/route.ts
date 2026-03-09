@@ -7,8 +7,7 @@ export async function POST(request: Request) {
   try {
     const { identifiant, userEmail } = await request.json();
 
-    const origin = request.headers.get("origin") || "https://app-inpi.urgencesformalites.fr";
-    const resetLink = `${origin}/dashboard/profils`;
+    const resetLink = "https://app-inpi.urgencesformalites.fr/dashboard/profils";
 
     const { data, error } = await resend.emails.send({
       from: "Urgences Formalités <onboarding@resend.dev>",

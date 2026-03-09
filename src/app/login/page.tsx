@@ -22,6 +22,7 @@ function LoginForm() {
   const [forgotSent, setForgotSent] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotError, setForgotError] = useState("");
+  const [forgotEmail, setForgotEmail] = useState("");
   const CONTACT_EMAIL = "contact@urgencesformalites.fr";
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -54,6 +55,10 @@ function LoginForm() {
   };
 
   const handleForgotPassword = async () => {
+    if (!forgotEmail.trim()) {
+      setForgotError("Veuillez renseigner votre adresse email.");
+      return;
+    }
     setForgotLoading(true);
     setForgotError("");
     try {
@@ -62,7 +67,7 @@ function LoginForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           identifiant: email.trim() || undefined,
-          userEmail: email.trim() || undefined,
+          userEmail: forgotEmail.trim(),
         }),
       });
       if (!res.ok) throw new Error("Erreur serveur");
@@ -78,6 +83,7 @@ function LoginForm() {
     setShowForgotModal(false);
     setForgotSent(false);
     setForgotError("");
+    setForgotEmail("");
   };
 
   return (
@@ -192,14 +198,22 @@ function LoginForm() {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <p className="text-sm text-uf-text dark:text-uf-text-dark">
-              Un lien de réinitialisation de mot de passe sera envoyé à
-              l&apos;adresse suivante :
+              Renseignez votre adresse email. Une demande de réinitialisation
+              sera envoyée à l&apos;administrateur.
             </p>
+            <Input
+              label="Votre adresse email"
+              type="email"
+              placeholder="votre.email@exemple.fr"
+              value={forgotEmail}
+              onChange={(e) => setForgotEmail(e.target.value)}
+              required
+            />
             <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-uf-border dark:border-uf-border-dark text-center">
-              <p className="text-sm font-medium text-uf-title dark:text-uf-title-dark">
-                {CONTACT_EMAIL}
+              <p className="text-xs text-uf-text-muted dark:text-uf-text-muted-dark">
+                La demande sera envoyée à <strong>{CONTACT_EMAIL}</strong>
               </p>
             </div>
             {forgotError && (
