@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -14,9 +14,10 @@ import {
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { mockEntreprises, mockFormalites } from "@/lib/mock-data";
+import { getEntreprises, getFormalites } from "@/lib/store";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { TYPE_FORMALITE_LABELS } from "@/types";
+import type { Entreprise, Formalite } from "@/types";
 
 export default function EntrepriseDetailPage({
   params,
@@ -24,7 +25,29 @@ export default function EntrepriseDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const entreprise = mockEntreprises.find((e) => e.id === id);
+  const [entreprise, setEntreprise] = useState<Entreprise | null>(null);
+  const [formalites, setFormalites] = useState<Formalite[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = () => {
+      const ent = getEntreprises().find((e) => e.id === id) ?? null;
+      setEntreprise(ent);
+      if (ent) {
+        setFormalites(getFormalites().filter((f) => f.entrepriseId === ent.id));
+      }
+      setLoading(false);
+    };
+    load();
+    window.addEventListener("focus", load);
+    window.addEventListener("store-updated", load);
+    return () => {
+      window.removeEventListener("focus", load);
+      window.removeEventListener("store-updated", load);
+    };
+  }, [id]);
+
+  if (loading) return null;
 
   if (!entreprise) {
     return (
@@ -39,10 +62,6 @@ export default function EntrepriseDetailPage({
       </div>
     );
   }
-
-  const formalites = mockFormalites.filter(
-    (f) => f.entrepriseId === entreprise.id
-  );
 
   return (
     <div className="space-y-6 max-w-3xl">

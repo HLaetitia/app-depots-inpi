@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -22,9 +22,10 @@ import {
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { mockFormalites, mockEntreprises } from "@/lib/mock-data";
+import { getFormalites, getEntreprises } from "@/lib/store";
 import { formatDate } from "@/lib/utils";
 import { TYPE_FORMALITE_LABELS } from "@/types";
+import type { Formalite, Entreprise } from "@/types";
 import { INPI_STATUT_LABELS, type InpiStatutFormalite } from "@/types/inpi";
 
 export default function FormaliteDetailPage({
@@ -33,11 +34,33 @@ export default function FormaliteDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const formalite = mockFormalites.find((f) => f.id === id);
+  const [formalite, setFormalite] = useState<Formalite | null>(null);
+  const [entreprise, setEntreprise] = useState<Entreprise | null>(null);
+  const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<
     "idle" | "success" | "error"
   >("idle");
+
+  useEffect(() => {
+    const load = () => {
+      const f = getFormalites().find((f) => f.id === id) ?? null;
+      setFormalite(f);
+      if (f) {
+        setEntreprise(getEntreprises().find((e) => e.id === f.entrepriseId) ?? null);
+      }
+      setLoading(false);
+    };
+    load();
+    window.addEventListener("focus", load);
+    window.addEventListener("store-updated", load);
+    return () => {
+      window.removeEventListener("focus", load);
+      window.removeEventListener("store-updated", load);
+    };
+  }, [id]);
+
+  if (loading) return null;
 
   if (!formalite) {
     return (
@@ -52,10 +75,6 @@ export default function FormaliteDetailPage({
       </div>
     );
   }
-
-  const entreprise = mockEntreprises.find(
-    (e) => e.id === formalite.entrepriseId
-  );
 
   // Simuler un statut INPI détaillé pour les formalités non-brouillon
   const inpiStatut: InpiStatutFormalite | null =
