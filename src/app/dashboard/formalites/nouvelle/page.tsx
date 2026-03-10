@@ -1,14 +1,27 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Upload, X, FileText, Save, Send } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { addFormalite, getFormalites } from "@/lib/store";
-import type { Formalite, TypeFormalite, StatutFormalite } from "@/types";
+import {
+  addFormalite,
+  getFormalites,
+  getEntreprises,
+  getCabinets,
+  addEntreprise,
+  addCabinet,
+} from "@/lib/store";
+import type {
+  Formalite,
+  TypeFormalite,
+  StatutFormalite,
+  Entreprise,
+  Cabinet,
+} from "@/types";
 import Link from "next/link";
 
 const typeFormaliteOptions = [
@@ -42,9 +55,20 @@ export default function NouvelleFormalitePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
+  // Données existantes
+  const [existingEntreprises, setExistingEntreprises] = useState<Entreprise[]>([]);
+  const [existingCabinets, setExistingCabinets] = useState<Cabinet[]>([]);
+
+  useEffect(() => {
+    setExistingEntreprises(getEntreprises());
+    setExistingCabinets(getCabinets());
+  }, []);
+
   const [formData, setFormData] = useState({
     type: "immatriculation",
     formeJuridique: "",
+    entrepriseId: "",        // ID entreprise existante ou "__new__"
+    cabinetId: "",           // ID cabinet existant ou "__new__"
     cabinetNom: "",
     cabinetTelephone: "",
     cabinetEmail: "",
@@ -97,15 +121,64 @@ export default function NouvelleFormalitePage() {
     const nextNum = String(existing.length + 1).padStart(3, "0");
     const now = new Date().toISOString().slice(0, 10);
 
+    // ─── Résoudre l'entreprise ───
+    let entrepriseId = "";
+    let entrepriseDenomination = "Nouvelle entreprise";
+
+    if (formData.entrepriseId && formData.entrepriseId !== "__new__") {
+      // Entreprise existante sélectionnée
+      const ent = existingEntreprises.find((e) => e.id === formData.entrepriseId);
+      if (ent) {
+        entrepriseId = ent.id;
+        entrepriseDenomination = ent.denomination;
+      }
+    } else if (formData.denomination.trim()) {
+      // Nouvelle entreprise → la créer dans le store
+      const newEnt: Entreprise = {
+        id: `e-${Date.now()}`,
+        denomination: formData.denomination.trim(),
+        siren: formData.siren.trim() || "000 000 000",
+        formeJuridique: (formData.formeJuridique || "SAS") as Entreprise["formeJuridique"],
+        siegeSocial: "",
+        dirigeant: "",
+        capital: 0,
+        dateCreation: now,
+      };
+      addEntreprise(newEnt);
+      entrepriseId = newEnt.id;
+      entrepriseDenomination = newEnt.denomination;
+    }
+
+    // ─── Résoudre le cabinet ───
+    let cabinetNom = "Non renseigné";
+
+    if (formData.cabinetId && formData.cabinetId !== "__new__") {
+      // Cabinet existant
+      const cab = existingCabinets.find((c) => c.id === formData.cabinetId);
+      if (cab) {
+        cabinetNom = cab.nom;
+      }
+    } else if (formData.cabinetNom.trim()) {
+      // Nouveau cabinet → le créer dans le store
+      const newCab: Cabinet = {
+        id: `cab-${Date.now()}`,
+        nom: formData.cabinetNom.trim(),
+        telephone: formData.cabinetTelephone.trim() || undefined,
+        email: formData.cabinetEmail.trim() || undefined,
+      };
+      addCabinet(newCab);
+      cabinetNom = newCab.nom;
+    }
+
     const newFormalite: Formalite = {
       id: `f-${Date.now()}`,
       reference: `UF-${new Date().getFullYear()}-${nextNum}`,
       type: formData.type as TypeFormalite,
       statut,
-      entrepriseId: "",
-      entrepriseDenomination: formData.denomination || "Nouvelle entreprise",
-      cabinet: formData.cabinetNom || "Non renseigné",
-      description: `${formData.type} — ${formData.denomination}`,
+      entrepriseId,
+      entrepriseDenomination,
+      cabinet: cabinetNom,
+      description: `${formData.type} — ${entrepriseDenomination}`,
       dateCreation: now,
       dateSoumission: statut === "en-traitement" ? now : undefined,
       formaliste: "Laëtitia Hacene",
@@ -178,37 +251,58 @@ export default function NouvelleFormalitePage() {
             Information du cabinet
           </h2>
           <div className="space-y-4">
-            <Input
-              label="Nom du cabinet *"
-              placeholder="Ex : Cabinet Moreau & Associés"
-              value={formData.cabinetNom}
+            <Select
+              label="Cabinet *"
+              options={[
+                { value: "", label: "Sélectionner un cabinet" },
+                ...existingCabinets.map((c) => ({
+                  value: c.id,
+                  label: c.nom,
+                })),
+                { value: "__new__", label: "+ Nouveau cabinet" },
+              ]}
+              value={formData.cabinetId}
               onChange={(e) =>
-                setFormData({ ...formData, cabinetNom: e.target.value })
+                setFormData({ ...formData, cabinetId: e.target.value, cabinetNom: "" })
               }
               required
             />
 
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="Téléphone"
-                type="tel"
-                placeholder="01 23 45 67 89"
-                value={formData.cabinetTelephone}
-                onChange={(e) =>
-                  setFormData({ ...formData, cabinetTelephone: e.target.value })
-                }
-              />
+            {formData.cabinetId === "__new__" && (
+              <>
+                <Input
+                  label="Nom du nouveau cabinet *"
+                  placeholder="Ex : Cabinet Moreau & Associés"
+                  value={formData.cabinetNom}
+                  onChange={(e) =>
+                    setFormData({ ...formData, cabinetNom: e.target.value })
+                  }
+                  required
+                />
 
-              <Input
-                label="Email"
-                type="email"
-                placeholder="contact@cabinet.fr"
-                value={formData.cabinetEmail}
-                onChange={(e) =>
-                  setFormData({ ...formData, cabinetEmail: e.target.value })
-                }
-              />
-            </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Téléphone"
+                    type="tel"
+                    placeholder="01 23 45 67 89"
+                    value={formData.cabinetTelephone}
+                    onChange={(e) =>
+                      setFormData({ ...formData, cabinetTelephone: e.target.value })
+                    }
+                  />
+
+                  <Input
+                    label="Email"
+                    type="email"
+                    placeholder="contact@cabinet.fr"
+                    value={formData.cabinetEmail}
+                    onChange={(e) =>
+                      setFormData({ ...formData, cabinetEmail: e.target.value })
+                    }
+                  />
+                </div>
+              </>
+            )}
           </div>
         </Card>
 
@@ -218,33 +312,54 @@ export default function NouvelleFormalitePage() {
             Identification de l&apos;entreprise
           </h2>
           <div className="space-y-4">
-            <Input
-              label="Dénomination sociale *"
-              placeholder="Ex : Ma Société SAS"
-              value={formData.denomination}
+            <Select
+              label="Entreprise *"
+              options={[
+                { value: "", label: "Sélectionner une entreprise" },
+                ...existingEntreprises.map((e) => ({
+                  value: e.id,
+                  label: `${e.denomination} (${e.siren})`,
+                })),
+                { value: "__new__", label: "+ Nouvelle entreprise" },
+              ]}
+              value={formData.entrepriseId}
               onChange={(e) =>
-                setFormData({ ...formData, denomination: e.target.value })
+                setFormData({ ...formData, entrepriseId: e.target.value, denomination: "", siren: "" })
               }
               required
             />
 
-            <Input
-              label="Numéro SIREN (si existant)"
-              placeholder="Ex : 123 456 789"
-              value={formData.siren}
-              onChange={(e) =>
-                setFormData({ ...formData, siren: e.target.value })
-              }
-            />
+            {formData.entrepriseId === "__new__" && (
+              <>
+                <Input
+                  label="Dénomination sociale *"
+                  placeholder="Ex : Ma Société SAS"
+                  value={formData.denomination}
+                  onChange={(e) =>
+                    setFormData({ ...formData, denomination: e.target.value })
+                  }
+                  required
+                />
 
-            <Input
-              label="Greffe compétent"
-              placeholder="Ex : Tribunal de commerce de Paris"
-              value={formData.greffe}
-              onChange={(e) =>
-                setFormData({ ...formData, greffe: e.target.value })
-              }
-            />
+                <Input
+                  label="Numéro SIREN (si existant)"
+                  placeholder="Ex : 123 456 789"
+                  value={formData.siren}
+                  onChange={(e) =>
+                    setFormData({ ...formData, siren: e.target.value })
+                  }
+                />
+
+                <Input
+                  label="Greffe compétent"
+                  placeholder="Ex : Tribunal de commerce de Paris"
+                  value={formData.greffe}
+                  onChange={(e) =>
+                    setFormData({ ...formData, greffe: e.target.value })
+                  }
+                />
+              </>
+            )}
           </div>
         </Card>
 
