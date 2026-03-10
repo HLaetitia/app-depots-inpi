@@ -69,6 +69,7 @@ export interface DocumentMeta {
   mimeType: string;
   typeDocument: TypeDocument;
   dateAjout: string;
+  dataUrl?: string;
 }
 
 export interface Formalite {

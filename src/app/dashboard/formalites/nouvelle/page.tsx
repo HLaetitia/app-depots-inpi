@@ -51,6 +51,7 @@ interface UploadedFile {
   size: number;
   type: string;
   typeDocument: TypeDocument;
+  dataUrl?: string;
 }
 
 export default function NouvelleFormalitePage() {
@@ -87,15 +88,22 @@ export default function NouvelleFormalitePage() {
     const accepted = Array.from(newFiles).filter((f) =>
       ["application/pdf", "image/jpeg", "image/png"].includes(f.type)
     );
-    setFiles((prev) => [
-      ...prev,
-      ...accepted.map((f) => ({
-        name: f.name,
-        size: f.size,
-        type: f.type,
-        typeDocument: detectTypeDocument(f.name),
-      })),
-    ]);
+    accepted.forEach((f) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setFiles((prev) => [
+          ...prev,
+          {
+            name: f.name,
+            size: f.size,
+            type: f.type,
+            typeDocument: detectTypeDocument(f.name),
+            dataUrl: reader.result as string,
+          },
+        ]);
+      };
+      reader.readAsDataURL(f);
+    });
   }, []);
 
   const removeFile = (index: number) => {
@@ -193,6 +201,7 @@ export default function NouvelleFormalitePage() {
               mimeType: f.type,
               typeDocument: f.typeDocument,
               dateAjout: now,
+              dataUrl: f.dataUrl,
             }))
           : undefined,
     };

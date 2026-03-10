@@ -77,6 +77,7 @@ interface UploadedFile {
   size: number;
   type: string;
   typeDocument: TypeDocument;
+  dataUrl?: string;
 }
 
 export default function FormaliteDetailPage({
@@ -170,15 +171,22 @@ export default function FormaliteDetailPage({
     const accepted = Array.from(newFiles).filter((f) =>
       ["application/pdf", "image/jpeg", "image/png"].includes(f.type)
     );
-    setPendingFiles((prev) => [
-      ...prev,
-      ...accepted.map((f) => ({
-        name: f.name,
-        size: f.size,
-        type: f.type,
-        typeDocument: detectTypeDocument(f.name),
-      })),
-    ]);
+    accepted.forEach((f) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPendingFiles((prev) => [
+          ...prev,
+          {
+            name: f.name,
+            size: f.size,
+            type: f.type,
+            typeDocument: detectTypeDocument(f.name),
+            dataUrl: reader.result as string,
+          },
+        ]);
+      };
+      reader.readAsDataURL(f);
+    });
   }, []);
 
   const removePendingFile = (index: number) => {
@@ -212,6 +220,7 @@ export default function FormaliteDetailPage({
       mimeType: f.type,
       typeDocument: f.typeDocument,
       dateAjout: now,
+      dataUrl: f.dataUrl,
     }));
     const existingDocs = formalite.documents ?? [];
     updateFormalite(formalite.id, {
@@ -233,19 +242,15 @@ export default function FormaliteDetailPage({
     setDeleteDocId(null);
   };
 
-  // ─── Télécharger un document (placeholder) ───
+  // ─── Télécharger un document ───
   const handleDownloadDocument = (doc: DocumentMeta) => {
-    // Génère un fichier placeholder puisque les binaires ne sont pas stockés
-    const content = `Document : ${doc.nom}\nType : ${TYPE_DOCUMENT_LABELS[doc.typeDocument]}\nTaille originale : ${formatFileSize(doc.taille)}\nDate d'ajout : ${doc.dateAjout}\n\n[Ce fichier est un placeholder — le fichier original n'est pas stocké dans le navigateur.]`;
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
+    if (!doc.dataUrl) return;
     const a = document.createElement("a");
-    a.href = url;
-    a.download = doc.nom.replace(/\.[^.]+$/, "") + "_placeholder.txt";
+    a.href = doc.dataUrl;
+    a.download = doc.nom;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
 
   if (loading) return null;
@@ -710,14 +715,16 @@ export default function FormaliteDetailPage({
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0 ml-2">
-                      <button
-                        type="button"
-                        onClick={() => handleDownloadDocument(doc)}
-                        className="p-1.5 rounded-lg text-uf-text-muted dark:text-uf-text-muted-dark hover:text-uf-button-hover hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
-                        title="Télécharger"
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
+                      {doc.dataUrl && (
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadDocument(doc)}
+                          className="p-1.5 rounded-lg text-uf-text-muted dark:text-uf-text-muted-dark hover:text-uf-button-hover hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
+                          title="Télécharger"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => setDeleteDocId(doc.id)}
