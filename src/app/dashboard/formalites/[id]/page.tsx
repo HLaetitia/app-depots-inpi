@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -19,15 +19,65 @@ import {
   Download,
   ExternalLink,
   Paperclip,
+  Pencil,
+  Trash2,
+  Upload,
+  Plus,
+  X,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { getFormalites, getEntreprises } from "@/lib/store";
-import { formatDate, formatFileSize } from "@/lib/utils";
-import { TYPE_FORMALITE_LABELS, TYPE_DOCUMENT_LABELS } from "@/types";
-import type { Formalite, Entreprise } from "@/types";
+import { Modal } from "@/components/ui/Modal";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import {
+  getFormalites,
+  getEntreprises,
+  getCabinets,
+  updateFormalite,
+} from "@/lib/store";
+import { formatDate, formatFileSize, detectTypeDocument } from "@/lib/utils";
+import {
+  TYPE_FORMALITE_LABELS,
+  TYPE_DOCUMENT_LABELS,
+  STATUT_FORMALITE_LABELS,
+} from "@/types";
+import type {
+  Formalite,
+  Entreprise,
+  Cabinet,
+  TypeFormalite,
+  StatutFormalite,
+  TypeDocument,
+  DocumentMeta,
+} from "@/types";
 import { INPI_STATUT_LABELS, type InpiStatutFormalite } from "@/types/inpi";
+
+// ─── Options pour les selects ───
+const typeFormaliteOptions = [
+  { value: "immatriculation", label: "Immatriculation" },
+  { value: "modification", label: "Modification" },
+  { value: "radiation", label: "Radiation / Dissolution" },
+  { value: "cession", label: "Cession de parts" },
+  { value: "depot-comptes", label: "Dépôt des comptes" },
+  { value: "beneficiaires-effectifs", label: "Bénéficiaires effectifs" },
+];
+
+const statutOptions = [
+  { value: "brouillon", label: "Brouillon" },
+  { value: "en-traitement", label: "En traitement INPI" },
+  { value: "valide", label: "Validé" },
+  { value: "rejete", label: "Rejeté (À corriger)" },
+];
+
+// ─── Interface fichier uploadé ───
+interface UploadedFile {
+  name: string;
+  size: number;
+  type: string;
+  typeDocument: TypeDocument;
+}
 
 export default function FormaliteDetailPage({
   params,
@@ -43,13 +93,37 @@ export default function FormaliteDetailPage({
     "idle" | "success" | "error"
   >("idle");
 
+  // ─── Modale d'édition ───
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [cabinets, setCabinets] = useState<Cabinet[]>([]);
+  const [editForm, setEditForm] = useState({
+    description: "",
+    type: "",
+    cabinet: "",
+    formaliste: "",
+    statut: "",
+    observations: "",
+  });
+
+  // ─── Upload de documents ───
+  const [showUploadZone, setShowUploadZone] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<UploadedFile[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ─── Suppression de document ───
+  const [deleteDocId, setDeleteDocId] = useState<string | null>(null);
+
   useEffect(() => {
     const load = () => {
       const f = getFormalites().find((f) => f.id === id) ?? null;
       setFormalite(f);
       if (f) {
-        setEntreprise(getEntreprises().find((e) => e.id === f.entrepriseId) ?? null);
+        setEntreprise(
+          getEntreprises().find((e) => e.id === f.entrepriseId) ?? null
+        );
       }
+      setCabinets(getCabinets());
       setLoading(false);
     };
     load();
@@ -60,6 +134,119 @@ export default function FormaliteDetailPage({
       window.removeEventListener("store-updated", load);
     };
   }, [id]);
+
+  // ─── Ouvrir la modale d'édition ───
+  const openEditModal = () => {
+    if (!formalite) return;
+    setEditForm({
+      description: formalite.description,
+      type: formalite.type,
+      cabinet: formalite.cabinet,
+      formaliste: formalite.formaliste,
+      statut: formalite.statut,
+      observations: formalite.observations || "",
+    });
+    setShowEditModal(true);
+  };
+
+  // ─── Sauvegarder les modifications ───
+  const handleSaveEdit = () => {
+    if (!formalite) return;
+    const updates: Partial<Formalite> = {
+      description: editForm.description.trim(),
+      type: editForm.type as TypeFormalite,
+      cabinet: editForm.cabinet,
+      formaliste: editForm.formaliste.trim(),
+      statut: editForm.statut as StatutFormalite,
+      observations: editForm.observations.trim() || undefined,
+    };
+    updateFormalite(formalite.id, updates);
+    setShowEditModal(false);
+  };
+
+  // ─── Upload de fichiers ───
+  const handleFileAdd = useCallback((newFiles: FileList | null) => {
+    if (!newFiles) return;
+    const accepted = Array.from(newFiles).filter((f) =>
+      ["application/pdf", "image/jpeg", "image/png"].includes(f.type)
+    );
+    setPendingFiles((prev) => [
+      ...prev,
+      ...accepted.map((f) => ({
+        name: f.name,
+        size: f.size,
+        type: f.type,
+        typeDocument: detectTypeDocument(f.name),
+      })),
+    ]);
+  }, []);
+
+  const removePendingFile = (index: number) => {
+    setPendingFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFileAdd(e.dataTransfer.files);
+  };
+
+  // ─── Valider l'ajout des documents ───
+  const handleConfirmUpload = () => {
+    if (!formalite || pendingFiles.length === 0) return;
+    const now = new Date().toISOString().slice(0, 10);
+    const newDocs: DocumentMeta[] = pendingFiles.map((f, i) => ({
+      id: `doc-${Date.now()}-${i}`,
+      nom: f.name,
+      taille: f.size,
+      mimeType: f.type,
+      typeDocument: f.typeDocument,
+      dateAjout: now,
+    }));
+    const existingDocs = formalite.documents ?? [];
+    updateFormalite(formalite.id, {
+      documents: [...existingDocs, ...newDocs],
+    });
+    setPendingFiles([]);
+    setShowUploadZone(false);
+  };
+
+  // ─── Supprimer un document ───
+  const handleDeleteDocument = () => {
+    if (!formalite || !deleteDocId) return;
+    const updatedDocs = (formalite.documents ?? []).filter(
+      (d) => d.id !== deleteDocId
+    );
+    updateFormalite(formalite.id, {
+      documents: updatedDocs.length > 0 ? updatedDocs : undefined,
+    });
+    setDeleteDocId(null);
+  };
+
+  // ─── Télécharger un document (placeholder) ───
+  const handleDownloadDocument = (doc: DocumentMeta) => {
+    // Génère un fichier placeholder puisque les binaires ne sont pas stockés
+    const content = `Document : ${doc.nom}\nType : ${TYPE_DOCUMENT_LABELS[doc.typeDocument]}\nTaille originale : ${formatFileSize(doc.taille)}\nDate d'ajout : ${doc.dateAjout}\n\n[Ce fichier est un placeholder — le fichier original n'est pas stocké dans le navigateur.]`;
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = doc.nom.replace(/\.[^.]+$/, "") + "_placeholder.txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   if (loading) return null;
 
@@ -136,6 +323,17 @@ export default function FormaliteDetailPage({
     }
   };
 
+  // Options cabinets pour le select
+  const cabinetOptions = [
+    { value: "", label: "Sélectionner un cabinet" },
+    ...cabinets.map((c) => ({ value: c.nom, label: c.nom })),
+  ];
+
+  // Document en cours de suppression
+  const deleteDocMeta = deleteDocId
+    ? formalite.documents?.find((d) => d.id === deleteDocId)
+    : null;
+
   return (
     <div className="space-y-6 max-w-3xl">
       {/* Header */}
@@ -203,10 +401,21 @@ export default function FormaliteDetailPage({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main info */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Détails de la formalité */}
           <Card>
-            <h2 className="text-lg font-semibold text-uf-title dark:text-uf-title-dark mb-4">
-              Détails de la formalité
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-uf-title dark:text-uf-title-dark">
+                Détails de la formalité
+              </h2>
+              <button
+                type="button"
+                onClick={openEditModal}
+                className="p-2 rounded-lg text-uf-text-muted dark:text-uf-text-muted-dark hover:text-uf-button-hover hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
+                title="Modifier les détails"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+            </div>
             <dl className="space-y-3">
               <div className="flex items-start gap-3">
                 <FileText className="w-4 h-4 text-uf-text-muted dark:text-uf-text-muted-dark mt-0.5" />
@@ -335,20 +544,151 @@ export default function FormaliteDetailPage({
 
           {/* Documents justificatifs */}
           <Card>
-            <h2 className="text-lg font-semibold text-uf-title dark:text-uf-title-dark mb-4 flex items-center gap-2">
-              <Paperclip className="w-5 h-5" />
-              Documents justificatifs
-              {(formalite.documents?.length ?? 0) > 0 && (
-                <span className="text-sm font-normal text-uf-text-muted dark:text-uf-text-muted-dark">
-                  ({formalite.documents!.length})
-                </span>
-              )}
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-uf-title dark:text-uf-title-dark flex items-center gap-2">
+                <Paperclip className="w-5 h-5" />
+                Documents justificatifs
+                {(formalite.documents?.length ?? 0) > 0 && (
+                  <span className="text-sm font-normal text-uf-text-muted dark:text-uf-text-muted-dark">
+                    ({formalite.documents!.length})
+                  </span>
+                )}
+              </h2>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowUploadZone(!showUploadZone);
+                  setPendingFiles([]);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-uf-button-hover hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                Ajouter
+              </button>
+            </div>
 
+            {/* Zone d'upload */}
+            {showUploadZone && (
+              <div className="mb-4 space-y-3">
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`relative p-6 rounded-lg border-2 border-dashed cursor-pointer transition-colors duration-200 ${
+                    isDragging
+                      ? "border-uf-button-hover bg-blue-50 dark:bg-blue-950/30"
+                      : "border-uf-border dark:border-uf-border-dark hover:border-uf-button-hover hover:bg-gray-50 dark:hover:bg-gray-800/30"
+                  }`}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => {
+                      handleFileAdd(e.target.files);
+                      e.target.value = "";
+                    }}
+                    className="hidden"
+                  />
+                  <div className="text-center">
+                    <Upload
+                      className={`w-8 h-8 mx-auto mb-2 ${
+                        isDragging
+                          ? "text-uf-button-hover"
+                          : "text-uf-text-muted dark:text-uf-text-muted-dark"
+                      }`}
+                    />
+                    <p className="text-sm font-medium text-uf-text dark:text-uf-text-dark">
+                      Glissez-déposez les fichiers ici
+                    </p>
+                    <p className="text-xs text-uf-text-muted dark:text-uf-text-muted-dark mt-1">
+                      PDF, JPG ou PNG
+                    </p>
+                  </div>
+                </div>
+
+                {/* Fichiers en attente */}
+                {pendingFiles.length > 0 && (
+                  <div className="space-y-2">
+                    {pendingFiles.map((file, index) => (
+                      <div
+                        key={`${file.name}-${index}`}
+                        className="flex items-center justify-between px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <FileText className="w-4 h-4 text-uf-button-hover shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-uf-text dark:text-uf-text-dark truncate">
+                              {file.name}
+                            </p>
+                            <p className="text-xs text-uf-text-muted dark:text-uf-text-muted-dark">
+                              {formatFileSize(file.size)}
+                            </p>
+                          </div>
+                        </div>
+                        <select
+                          value={file.typeDocument}
+                          onChange={(e) => {
+                            setPendingFiles((prev) =>
+                              prev.map((f, i) =>
+                                i === index
+                                  ? {
+                                      ...f,
+                                      typeDocument: e.target
+                                        .value as TypeDocument,
+                                    }
+                                  : f
+                              )
+                            );
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-xs border border-uf-border dark:border-uf-border-dark rounded-md px-2 py-1 bg-white dark:bg-gray-800 text-uf-text dark:text-uf-text-dark shrink-0 mx-2"
+                        >
+                          <option value="kbis">Kbis</option>
+                          <option value="statuts">Statuts</option>
+                          <option value="mandat">Mandat</option>
+                          <option value="autre">Autre</option>
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => removePendingFile(index)}
+                          className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-950 text-uf-text-muted hover:text-red-500 transition-colors cursor-pointer shrink-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <div className="flex gap-2 justify-end">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          setPendingFiles([]);
+                          setShowUploadZone(false);
+                        }}
+                      >
+                        Annuler
+                      </Button>
+                      <Button size="sm" onClick={handleConfirmUpload}>
+                        <Upload className="w-3.5 h-3.5 mr-1.5" />
+                        Ajouter {pendingFiles.length} document
+                        {pendingFiles.length > 1 ? "s" : ""}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Liste des documents existants */}
             {!formalite.documents || formalite.documents.length === 0 ? (
-              <p className="text-sm text-uf-text-muted dark:text-uf-text-muted-dark italic">
-                Aucun document associé à cette formalité
-              </p>
+              !showUploadZone && (
+                <p className="text-sm text-uf-text-muted dark:text-uf-text-muted-dark italic">
+                  Aucun document associé à cette formalité
+                </p>
+              )
             ) : (
               <div className="space-y-2">
                 {formalite.documents.map((doc) => (
@@ -363,9 +703,29 @@ export default function FormaliteDetailPage({
                           {doc.nom}
                         </p>
                         <p className="text-xs text-uf-text-muted dark:text-uf-text-muted-dark">
-                          {TYPE_DOCUMENT_LABELS[doc.typeDocument]} · {formatFileSize(doc.taille)} · Ajouté le {formatDate(doc.dateAjout)}
+                          {TYPE_DOCUMENT_LABELS[doc.typeDocument]} ·{" "}
+                          {formatFileSize(doc.taille)} · Ajouté le{" "}
+                          {formatDate(doc.dateAjout)}
                         </p>
                       </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0 ml-2">
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadDocument(doc)}
+                        className="p-1.5 rounded-lg text-uf-text-muted dark:text-uf-text-muted-dark hover:text-uf-button-hover hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
+                        title="Télécharger"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteDocId(doc.id)}
+                        className="p-1.5 rounded-lg text-uf-text-muted dark:text-uf-text-muted-dark hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                        title="Supprimer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -455,6 +815,128 @@ export default function FormaliteDetailPage({
           </Card>
         </div>
       </div>
+
+      {/* ─── Modale d'édition des détails ─── */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        title="Modifier la formalité"
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => setShowEditModal(false)}
+            >
+              Annuler
+            </Button>
+            <Button onClick={handleSaveEdit}>Enregistrer</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Input
+            label="Description"
+            value={editForm.description}
+            onChange={(e) =>
+              setEditForm({ ...editForm, description: e.target.value })
+            }
+          />
+
+          <Select
+            label="Type de formalité"
+            options={typeFormaliteOptions}
+            value={editForm.type}
+            onChange={(e) =>
+              setEditForm({ ...editForm, type: e.target.value })
+            }
+          />
+
+          <Select
+            label="Cabinet"
+            options={cabinetOptions}
+            value={editForm.cabinet}
+            onChange={(e) =>
+              setEditForm({ ...editForm, cabinet: e.target.value })
+            }
+          />
+
+          <Input
+            label="Formaliste"
+            value={editForm.formaliste}
+            onChange={(e) =>
+              setEditForm({ ...editForm, formaliste: e.target.value })
+            }
+          />
+
+          <Select
+            label="Statut"
+            options={statutOptions}
+            value={editForm.statut}
+            onChange={(e) =>
+              setEditForm({ ...editForm, statut: e.target.value })
+            }
+          />
+
+          <div>
+            <label className="block text-sm font-medium text-uf-text dark:text-uf-text-dark mb-1.5">
+              Observations
+            </label>
+            <textarea
+              value={editForm.observations}
+              onChange={(e) =>
+                setEditForm({ ...editForm, observations: e.target.value })
+              }
+              rows={3}
+              className="w-full px-3 py-2 rounded-lg border border-uf-border dark:border-uf-border-dark bg-white dark:bg-gray-800 text-sm text-uf-text dark:text-uf-text-dark placeholder-uf-text-muted dark:placeholder-uf-text-muted-dark focus:outline-none focus:ring-2 focus:ring-uf-button/30 focus:border-uf-button resize-none"
+              placeholder="Observations, commentaires..."
+            />
+          </div>
+        </div>
+      </Modal>
+
+      {/* ─── Modale de confirmation de suppression de document ─── */}
+      <Modal
+        isOpen={!!deleteDocId}
+        onClose={() => setDeleteDocId(null)}
+        title="Supprimer le document"
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => setDeleteDocId(null)}>
+              Annuler
+            </Button>
+            <button
+              type="button"
+              onClick={handleDeleteDocument}
+              className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-red-500 hover:bg-red-600 transition-colors cursor-pointer"
+            >
+              Supprimer
+            </button>
+          </>
+        }
+      >
+        {deleteDocMeta && (
+          <div className="space-y-3">
+            <p className="text-sm text-uf-text dark:text-uf-text-dark">
+              Êtes-vous sûr de vouloir supprimer ce document ?
+            </p>
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-uf-border dark:border-uf-border-dark">
+              <FileText className="w-5 h-5 text-uf-button-hover shrink-0" />
+              <div className="min-w-0">
+                <p className="font-medium text-uf-text dark:text-uf-text-dark truncate">
+                  {deleteDocMeta.nom}
+                </p>
+                <p className="text-xs text-uf-text-muted dark:text-uf-text-muted-dark">
+                  {TYPE_DOCUMENT_LABELS[deleteDocMeta.typeDocument]} ·{" "}
+                  {formatFileSize(deleteDocMeta.taille)}
+                </p>
+              </div>
+            </div>
+            <p className="text-xs text-red-500">
+              Cette action est irréversible.
+            </p>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
