@@ -144,6 +144,10 @@ export const mockFormalites: Formalite[] = [
     dateValidation: "2026-01-20",
     formaliste: "Ahmed Hacene",
     refINPI: "INPI-2026-78452",
+    documents: [
+      { id: "doc-1", nom: "Kbis_TechSolutions.pdf", taille: 245000, mimeType: "application/pdf", typeDocument: "kbis", dateAjout: "2026-01-10" },
+      { id: "doc-2", nom: "Statuts_TechSolutions_2023.pdf", taille: 1250000, mimeType: "application/pdf", typeDocument: "statuts", dateAjout: "2026-01-10" },
+    ],
   },
   {
     id: "f2",
@@ -158,6 +162,9 @@ export const mockFormalites: Formalite[] = [
     dateSoumission: "2026-02-07",
     formaliste: "Laëtitia Hacene",
     refINPI: "INPI-2026-81203",
+    documents: [
+      { id: "doc-3", nom: "Mandat_transfert_siege.pdf", taille: 180000, mimeType: "application/pdf", typeDocument: "mandat", dateAjout: "2026-02-05" },
+    ],
   },
   {
     id: "f3",
@@ -172,6 +179,10 @@ export const mockFormalites: Formalite[] = [
     dateSoumission: "2026-02-22",
     formaliste: "Ahmed Hacene",
     refINPI: "INPI-2026-83401",
+    documents: [
+      { id: "doc-4", nom: "Comptes_annuels_2025.pdf", taille: 890000, mimeType: "application/pdf", typeDocument: "autre", dateAjout: "2026-02-20" },
+      { id: "doc-5", nom: "Rapport_gestion_2025.pdf", taille: 420000, mimeType: "application/pdf", typeDocument: "autre", dateAjout: "2026-02-20" },
+    ],
   },
   {
     id: "f4",
@@ -199,6 +210,9 @@ export const mockFormalites: Formalite[] = [
     formaliste: "Ahmed Hacene",
     refINPI: "INPI-2026-80115",
     observations: "Pièces justificatives manquantes — PV d'AG requis",
+    documents: [
+      { id: "doc-6", nom: "PV_dissolution_LeGourmet.pdf", taille: 310000, mimeType: "application/pdf", typeDocument: "autre", dateAjout: "2026-02-15" },
+    ],
   },
   {
     id: "f6",

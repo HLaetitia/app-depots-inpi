@@ -10,6 +10,7 @@ import {
   Calendar,
   Banknote,
   FileText,
+  Paperclip,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -167,7 +168,15 @@ export default function EntrepriseDetailPage({
                     </p>
                   </div>
                 </div>
-                <Badge statut={f.statut} />
+                <div className="flex items-center gap-2">
+                  {(f.documents?.length ?? 0) > 0 && (
+                    <span className="flex items-center gap-1 text-xs text-uf-text-muted dark:text-uf-text-muted-dark">
+                      <Paperclip className="w-3 h-3" />
+                      {f.documents!.length}
+                    </span>
+                  )}
+                  <Badge statut={f.statut} />
+                </div>
               </Link>
             ))}
           </div>

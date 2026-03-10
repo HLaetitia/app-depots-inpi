@@ -18,13 +18,14 @@ import {
   Loader2,
   Download,
   ExternalLink,
+  Paperclip,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { getFormalites, getEntreprises } from "@/lib/store";
-import { formatDate } from "@/lib/utils";
-import { TYPE_FORMALITE_LABELS } from "@/types";
+import { formatDate, formatFileSize } from "@/lib/utils";
+import { TYPE_FORMALITE_LABELS, TYPE_DOCUMENT_LABELS } from "@/types";
 import type { Formalite, Entreprise } from "@/types";
 import { INPI_STATUT_LABELS, type InpiStatutFormalite } from "@/types/inpi";
 
@@ -331,6 +332,46 @@ export default function FormaliteDetailPage({
               </div>
             </Card>
           )}
+
+          {/* Documents justificatifs */}
+          <Card>
+            <h2 className="text-lg font-semibold text-uf-title dark:text-uf-title-dark mb-4 flex items-center gap-2">
+              <Paperclip className="w-5 h-5" />
+              Documents justificatifs
+              {(formalite.documents?.length ?? 0) > 0 && (
+                <span className="text-sm font-normal text-uf-text-muted dark:text-uf-text-muted-dark">
+                  ({formalite.documents!.length})
+                </span>
+              )}
+            </h2>
+
+            {!formalite.documents || formalite.documents.length === 0 ? (
+              <p className="text-sm text-uf-text-muted dark:text-uf-text-muted-dark italic">
+                Aucun document associé à cette formalité
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {formalite.documents.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-uf-border dark:border-uf-border-dark"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <FileText className="w-4 h-4 text-uf-button-hover shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-uf-text dark:text-uf-text-dark truncate">
+                          {doc.nom}
+                        </p>
+                        <p className="text-xs text-uf-text-muted dark:text-uf-text-muted-dark">
+                          {TYPE_DOCUMENT_LABELS[doc.typeDocument]} · {formatFileSize(doc.taille)} · Ajouté le {formatDate(doc.dateAjout)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
 
           {/* Observations */}
           {formalite.observations && (

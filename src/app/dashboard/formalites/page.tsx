@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Search, FileText, Trash2 } from "lucide-react";
+import { Plus, Search, FileText, Trash2, Paperclip } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -160,6 +160,12 @@ export default function FormalitesPage() {
                 </Link>
 
                 <div className="flex items-center gap-3 shrink-0 ml-4">
+                  {(f.documents?.length ?? 0) > 0 && (
+                    <span className="flex items-center gap-1 text-xs text-uf-text-muted dark:text-uf-text-muted-dark">
+                      <Paperclip className="w-3.5 h-3.5" />
+                      {f.documents!.length}
+                    </span>
+                  )}
                   <Badge statut={f.statut} />
                   <button
                     type="button"

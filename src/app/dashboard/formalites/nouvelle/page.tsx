@@ -21,7 +21,9 @@ import type {
   StatutFormalite,
   Entreprise,
   Cabinet,
+  TypeDocument,
 } from "@/types";
+import { formatFileSize, detectTypeDocument } from "@/lib/utils";
 import Link from "next/link";
 
 const typeFormaliteOptions = [
@@ -48,6 +50,7 @@ interface UploadedFile {
   name: string;
   size: number;
   type: string;
+  typeDocument: TypeDocument;
 }
 
 export default function NouvelleFormalitePage() {
@@ -86,7 +89,12 @@ export default function NouvelleFormalitePage() {
     );
     setFiles((prev) => [
       ...prev,
-      ...accepted.map((f) => ({ name: f.name, size: f.size, type: f.type })),
+      ...accepted.map((f) => ({
+        name: f.name,
+        size: f.size,
+        type: f.type,
+        typeDocument: detectTypeDocument(f.name),
+      })),
     ]);
   }, []);
 
@@ -108,12 +116,6 @@ export default function NouvelleFormalitePage() {
     e.preventDefault();
     setIsDragging(false);
     handleFileAdd(e.dataTransfer.files);
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} o`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
   };
 
   const createFormaliteFromForm = (statut: StatutFormalite): void => {
@@ -182,6 +184,17 @@ export default function NouvelleFormalitePage() {
       dateCreation: now,
       dateSoumission: statut === "en-traitement" ? now : undefined,
       formaliste: "Laëtitia Hacene",
+      documents:
+        files.length > 0
+          ? files.map((f, i) => ({
+              id: `doc-${Date.now()}-${i}`,
+              nom: f.name,
+              taille: f.size,
+              mimeType: f.type,
+              typeDocument: f.typeDocument,
+              dateAjout: now,
+            }))
+          : undefined,
     };
 
     addFormalite(newFormalite);
@@ -426,7 +439,7 @@ export default function NouvelleFormalitePage() {
                   key={`${file.name}-${index}`}
                   className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-uf-border dark:border-uf-border-dark"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
                     <FileText className="w-4 h-4 text-uf-button-hover shrink-0" />
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-uf-text dark:text-uf-text-dark truncate">
@@ -437,10 +450,29 @@ export default function NouvelleFormalitePage() {
                       </p>
                     </div>
                   </div>
+                  <select
+                    value={file.typeDocument}
+                    onChange={(e) => {
+                      setFiles((prev) =>
+                        prev.map((f, i) =>
+                          i === index
+                            ? { ...f, typeDocument: e.target.value as TypeDocument }
+                            : f
+                        )
+                      );
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-xs border border-uf-border dark:border-uf-border-dark rounded-md px-2 py-1 bg-white dark:bg-gray-800 text-uf-text dark:text-uf-text-dark shrink-0"
+                  >
+                    <option value="kbis">Kbis</option>
+                    <option value="statuts">Statuts</option>
+                    <option value="mandat">Mandat</option>
+                    <option value="autre">Autre</option>
+                  </select>
                   <button
                     type="button"
                     onClick={() => removeFile(index)}
-                    className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-950 text-uf-text-muted hover:text-red-500 transition-colors cursor-pointer"
+                    className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-950 text-uf-text-muted hover:text-red-500 transition-colors cursor-pointer shrink-0"
                   >
                     <X className="w-4 h-4" />
                   </button>

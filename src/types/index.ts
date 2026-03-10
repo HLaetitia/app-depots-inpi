@@ -53,6 +53,24 @@ export interface Entreprise {
   dateCreation: string;
 }
 
+export type TypeDocument = "kbis" | "statuts" | "mandat" | "autre";
+
+export const TYPE_DOCUMENT_LABELS: Record<TypeDocument, string> = {
+  kbis: "Kbis",
+  statuts: "Statuts",
+  mandat: "Mandat",
+  autre: "Autre",
+};
+
+export interface DocumentMeta {
+  id: string;
+  nom: string;
+  taille: number;
+  mimeType: string;
+  typeDocument: TypeDocument;
+  dateAjout: string;
+}
+
 export interface Formalite {
   id: string;
   reference: string;
@@ -68,6 +86,7 @@ export interface Formalite {
   formaliste: string;
   refINPI?: string;
   observations?: string;
+  documents?: DocumentMeta[];
 }
 
 export const TYPE_FORMALITE_LABELS: Record<TypeFormalite, string> = {

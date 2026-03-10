@@ -11,6 +11,7 @@ import {
   Eye,
   Upload,
   Trash2,
+  Paperclip,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -168,6 +169,9 @@ export default function DashboardPage() {
                     Réf. INPI
                   </th>
                   <th className="text-left px-4 py-3 font-semibold text-uf-text-muted dark:text-uf-text-muted-dark">
+                    Docs
+                  </th>
+                  <th className="text-left px-4 py-3 font-semibold text-uf-text-muted dark:text-uf-text-muted-dark">
                     Actions
                   </th>
                 </tr>
@@ -198,6 +202,16 @@ export default function DashboardPage() {
                     </td>
                     <td className="px-4 py-3 text-uf-text-muted dark:text-uf-text-muted-dark whitespace-nowrap">
                       {f.refINPI || "—"}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {(f.documents?.length ?? 0) > 0 ? (
+                        <span className="flex items-center gap-1 text-xs text-uf-text-muted dark:text-uf-text-muted-dark">
+                          <Paperclip className="w-3.5 h-3.5" />
+                          {f.documents!.length}
+                        </span>
+                      ) : (
+                        <span className="text-uf-text-muted dark:text-uf-text-muted-dark">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="flex items-center gap-1">

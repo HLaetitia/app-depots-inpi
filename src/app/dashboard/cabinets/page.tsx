@@ -14,6 +14,7 @@ import {
   Pencil,
   Trash2,
   X,
+  Paperclip,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -375,6 +376,9 @@ export default function CabinetsPage() {
                                 <th className="pb-2 font-semibold text-uf-text-muted dark:text-uf-text-muted-dark text-xs">
                                   Formaliste
                                 </th>
+                                <th className="pb-2 font-semibold text-uf-text-muted dark:text-uf-text-muted-dark text-xs">
+                                  Docs
+                                </th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-uf-border dark:divide-uf-border-dark">
@@ -394,6 +398,16 @@ export default function CabinetsPage() {
                                   </td>
                                   <td className="py-2 text-uf-text-muted dark:text-uf-text-muted-dark">
                                     {f.formaliste}
+                                  </td>
+                                  <td className="py-2">
+                                    {(f.documents?.length ?? 0) > 0 ? (
+                                      <span className="flex items-center gap-1 text-xs text-uf-text-muted dark:text-uf-text-muted-dark">
+                                        <Paperclip className="w-3 h-3" />
+                                        {f.documents!.length}
+                                      </span>
+                                    ) : (
+                                      <span className="text-xs text-uf-text-muted dark:text-uf-text-muted-dark">—</span>
+                                    )}
                                   </td>
                                 </tr>
                               ))}

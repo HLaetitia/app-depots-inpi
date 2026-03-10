@@ -54,8 +54,9 @@ function ensureInitialized(): void {
     writeStore(KEYS.users, mockUsers);
     localStorage.setItem(KEYS.initialized, "true");
   }
-  // Migration : ajouter les mots de passe aux utilisateurs existants
+  // Migrations
   migratePasswords();
+  migrateDocuments();
 }
 
 function migratePasswords(): void {
@@ -76,6 +77,27 @@ function migratePasswords(): void {
     return u;
   });
   if (changed) writeStore(KEYS.users, updated);
+}
+
+function migrateDocuments(): void {
+  const formalites = readStore<Formalite[]>(KEYS.formalites);
+  if (!formalites) return;
+  const alreadyMigrated = localStorage.getItem("uf-documents-migrated");
+  if (alreadyMigrated) return;
+
+  let changed = false;
+  const updated = formalites.map((f) => {
+    if (!f.documents) {
+      const mock = mockFormalites.find((m) => m.id === f.id);
+      if (mock?.documents) {
+        changed = true;
+        return { ...f, documents: mock.documents };
+      }
+    }
+    return f;
+  });
+  if (changed) writeStore(KEYS.formalites, updated);
+  localStorage.setItem("uf-documents-migrated", "true");
 }
 
 // ════════════════════════════════════════════════════
@@ -212,5 +234,6 @@ export function resetStore(): void {
   localStorage.removeItem(KEYS.entreprises);
   localStorage.removeItem(KEYS.cabinets);
   localStorage.removeItem(KEYS.users);
+  localStorage.removeItem("uf-documents-migrated");
   ensureInitialized();
 }
