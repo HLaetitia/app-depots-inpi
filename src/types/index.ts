@@ -70,6 +70,7 @@ export interface DocumentMeta {
   typeDocument: TypeDocument;
   dateAjout: string;
   dataUrl?: string;
+  contenu?: string;
 }
 
 export interface Formalite {

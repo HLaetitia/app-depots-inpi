@@ -24,11 +24,13 @@ import {
   Upload,
   Plus,
   X,
+  Eye,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { DocumentViewer } from "@/components/ui/DocumentViewer";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import {
@@ -114,6 +116,9 @@ export default function FormaliteDetailPage({
 
   // ─── Suppression de document ───
   const [deleteDocId, setDeleteDocId] = useState<string | null>(null);
+
+  // ─── Visionneuse de document ───
+  const [viewerDoc, setViewerDoc] = useState<DocumentMeta | null>(null);
 
   useEffect(() => {
     const load = () => {
@@ -251,6 +256,16 @@ export default function FormaliteDetailPage({
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+  };
+
+  // ─── Sauvegarder le contenu éditeur d'un document ───
+  const handleSaveDocumentContent = (contenu: string) => {
+    if (!formalite || !viewerDoc) return;
+    const updatedDocs = (formalite.documents ?? []).map((d) =>
+      d.id === viewerDoc.id ? { ...d, contenu } : d
+    );
+    updateFormalite(formalite.id, { documents: updatedDocs });
+    setViewerDoc((prev) => (prev ? { ...prev, contenu } : null));
   };
 
   if (loading) return null;
@@ -699,9 +714,13 @@ export default function FormaliteDetailPage({
                 {formalite.documents.map((doc) => (
                   <div
                     key={doc.id}
-                    className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-uf-border dark:border-uf-border-dark"
+                    className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-uf-border dark:border-uf-border-dark hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer"
+                      onClick={() => setViewerDoc(doc)}
+                      title="Ouvrir la visionneuse"
+                    >
                       <FileText className="w-4 h-4 text-uf-button-hover shrink-0" />
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-uf-text dark:text-uf-text-dark truncate">
@@ -715,6 +734,14 @@ export default function FormaliteDetailPage({
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0 ml-2">
+                      <button
+                        type="button"
+                        onClick={() => setViewerDoc(doc)}
+                        className="p-1.5 rounded-lg text-uf-text-muted dark:text-uf-text-muted-dark hover:text-uf-button-hover hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
+                        title="Visualiser"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
                       {doc.dataUrl && (
                         <button
                           type="button"
@@ -944,6 +971,17 @@ export default function FormaliteDetailPage({
           </div>
         )}
       </Modal>
+
+      {/* ─── Visionneuse de document ─── */}
+      {viewerDoc && (
+        <DocumentViewer
+          document={viewerDoc}
+          isOpen={!!viewerDoc}
+          onClose={() => setViewerDoc(null)}
+          onSave={handleSaveDocumentContent}
+          onDownload={() => handleDownloadDocument(viewerDoc)}
+        />
+      )}
     </div>
   );
 }
