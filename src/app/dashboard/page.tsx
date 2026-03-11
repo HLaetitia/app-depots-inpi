@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Clock,
   CheckCircle2,
@@ -12,19 +13,22 @@ import {
   Upload,
   Trash2,
   Paperclip,
+  Loader2,
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { getFormalites, deleteFormalite } from "@/lib/store";
+import { getFormalites, deleteFormalite, updateFormalite } from "@/lib/store";
 import { formatDate } from "@/lib/utils";
 import { TYPE_FORMALITE_LABELS } from "@/types";
 import type { Formalite } from "@/types";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [formalites, setFormalites] = useState<Formalite[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Formalite | null>(null);
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
 
   useEffect(() => {
     const load = () =>
@@ -79,6 +83,22 @@ export default function DashboardPage() {
     deleteFormalite(deleteTarget.id);
     setFormalites((prev) => prev.filter((f) => f.id !== deleteTarget.id));
     setDeleteTarget(null);
+  };
+
+  const handleSubmit = async (f: Formalite) => {
+    setSubmittingId(f.id);
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const now = new Date().toISOString();
+    updateFormalite(f.id, {
+      statut: "en-traitement",
+      dateSoumission: now,
+    });
+    setFormalites((prev) =>
+      prev.map((x) =>
+        x.id === f.id ? { ...x, statut: "en-traitement", dateSoumission: now } : x
+      )
+    );
+    setSubmittingId(null);
   };
 
   return (
@@ -180,7 +200,8 @@ export default function DashboardPage() {
                 {formalites.map((f) => (
                   <tr
                     key={f.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+                    onClick={() => router.push(`/dashboard/formalites/${f.id}`)}
                   >
                     <td className="px-4 py-3 font-medium text-uf-text dark:text-uf-text-dark whitespace-nowrap">
                       {f.reference}
@@ -214,11 +235,19 @@ export default function DashboardPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                         {f.statut === "brouillon" ? (
-                          <Button size="sm">
-                            <Upload className="w-3.5 h-3.5 mr-1.5" />
-                            Soumettre
+                          <Button
+                            size="sm"
+                            onClick={() => handleSubmit(f)}
+                            disabled={submittingId === f.id}
+                          >
+                            {submittingId === f.id ? (
+                              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                            ) : (
+                              <Upload className="w-3.5 h-3.5 mr-1.5" />
+                            )}
+                            {submittingId === f.id ? "Soumission..." : "Soumettre"}
                           </Button>
                         ) : (
                           <Link href={`/dashboard/formalites/${f.id}`}>

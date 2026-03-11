@@ -329,12 +329,21 @@ export default function FormaliteDetailPage({
   ];
 
   const handleSubmitINPI = async () => {
+    if (!formalite) return;
     setIsSubmitting(true);
     setSubmitStatus("idle");
 
     try {
       // Simulation d'un appel API
       await new Promise((resolve) => setTimeout(resolve, 2000));
+      const now = new Date().toISOString();
+      updateFormalite(formalite.id, {
+        statut: "en-traitement",
+        dateSoumission: now,
+      });
+      setFormalite((prev) =>
+        prev ? { ...prev, statut: "en-traitement", dateSoumission: now } : prev
+      );
       setSubmitStatus("success");
     } catch {
       setSubmitStatus("error");
