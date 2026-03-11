@@ -334,15 +334,17 @@ export default function FormaliteDetailPage({
     setSubmitStatus("idle");
 
     try {
-      // Simulation d'un appel API
+      // Simulation d'un appel API INPI
       await new Promise((resolve) => setTimeout(resolve, 2000));
       const now = new Date().toISOString();
+      const refINPI = `INPI-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
       updateFormalite(formalite.id, {
         statut: "en-traitement",
         dateSoumission: now,
+        refINPI,
       });
       setFormalite((prev) =>
-        prev ? { ...prev, statut: "en-traitement", dateSoumission: now } : prev
+        prev ? { ...prev, statut: "en-traitement", dateSoumission: now, refINPI } : prev
       );
       setSubmitStatus("success");
     } catch {
@@ -350,6 +352,54 @@ export default function FormaliteDetailPage({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // ─── Synthèse PDF ───
+  const handleSynthesePDF = () => {
+    if (!formalite) return;
+    const docs = formalite.documents ?? [];
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Synthèse ${formalite.reference}</title>
+<style>body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;color:#222;font-size:14px}
+h1{color:#0e7490;font-size:22px;border-bottom:2px solid #0e7490;padding-bottom:8px}
+h2{font-size:16px;margin-top:24px;color:#333}
+table{width:100%;border-collapse:collapse;margin-top:8px}
+th,td{border:1px solid #ddd;padding:6px 10px;text-align:left;font-size:13px}
+th{background:#f5f5f5}
+.badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:600}
+.meta{color:#666;font-size:13px;margin:4px 0}
+</style></head><body>
+<h1>Synthèse de la formalité — ${formalite.reference}</h1>
+<p class="meta"><strong>Réf. INPI :</strong> ${formalite.refINPI || "—"}</p>
+<p class="meta"><strong>Date de soumission :</strong> ${formalite.dateSoumission ? new Date(formalite.dateSoumission).toLocaleDateString("fr-FR") : "—"}</p>
+<p class="meta"><strong>Statut :</strong> ${STATUT_FORMALITE_LABELS[formalite.statut]}</p>
+<h2>Détails</h2>
+<table>
+<tr><th>Type</th><td>${TYPE_FORMALITE_LABELS[formalite.type]}</td></tr>
+<tr><th>Description</th><td>${formalite.description}</td></tr>
+<tr><th>Cabinet</th><td>${formalite.cabinet}</td></tr>
+<tr><th>Entreprise</th><td>${formalite.entrepriseDenomination}</td></tr>
+<tr><th>Formaliste</th><td>${formalite.formaliste}</td></tr>
+<tr><th>Date de création</th><td>${new Date(formalite.dateCreation).toLocaleDateString("fr-FR")}</td></tr>
+${formalite.observations ? `<tr><th>Observations</th><td>${formalite.observations}</td></tr>` : ""}
+</table>
+<h2>Documents joints (${docs.length})</h2>
+${docs.length > 0 ? `<table><tr><th>Nom</th><th>Type</th><th>Taille</th><th>Date d'ajout</th></tr>
+${docs.map((d) => `<tr><td>${d.nom}</td><td>${TYPE_DOCUMENT_LABELS[d.typeDocument]}</td><td>${formatFileSize(d.taille)}</td><td>${new Date(d.dateAjout).toLocaleDateString("fr-FR")}</td></tr>`).join("")}
+</table>` : "<p>Aucun document joint.</p>"}
+<p style="margin-top:30px;font-size:11px;color:#999;text-align:center">Généré le ${new Date().toLocaleDateString("fr-FR")} — Urgences Formalités</p>
+</body></html>`;
+    const w = window.open("", "_blank");
+    if (w) {
+      w.document.write(html);
+      w.document.close();
+      setTimeout(() => w.print(), 500);
+    }
+  };
+
+  // ─── Voir sur le Guichet Unique ───
+  const handleVoirGuichetUnique = () => {
+    window.open("https://formalites.entreprises.gouv.fr", "_blank");
   };
 
   // Options cabinets pour le select
@@ -404,11 +454,12 @@ export default function FormaliteDetailPage({
           <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 shrink-0" />
           <div>
             <p className="text-sm font-medium text-green-800 dark:text-green-200">
-              Formalité soumise avec succès (simulation)
+              Formalité soumise avec succès — Réf. {formalite.refINPI}
             </p>
             <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
-              En production, la formalité sera envoyée au Guichet Unique INPI
-              pour traitement.
+              {(formalite.documents?.length ?? 0) > 0
+                ? `${formalite.documents!.length} document(s) transmis au Guichet Unique INPI pour traitement.`
+                : "Formalité transmise au Guichet Unique INPI pour traitement."}
             </p>
           </div>
         </div>
@@ -558,12 +609,12 @@ export default function FormaliteDetailPage({
               {/* Actions selon le statut */}
               <div className="mt-4 flex gap-2">
                 {formalite.refINPI && (
-                  <Button variant="secondary" size="sm">
+                  <Button variant="secondary" size="sm" onClick={handleSynthesePDF}>
                     <Download className="w-3.5 h-3.5 mr-1.5" />
                     Synthèse PDF
                   </Button>
                 )}
-                <Button variant="secondary" size="sm">
+                <Button variant="secondary" size="sm" onClick={handleVoirGuichetUnique}>
                   <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
                   Voir sur le Guichet Unique
                 </Button>

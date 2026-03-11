@@ -93,13 +93,15 @@ export default function DashboardPage() {
     setSubmittingId(f.id);
     await new Promise((resolve) => setTimeout(resolve, 1500));
     const now = new Date().toISOString();
+    const refINPI = `INPI-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
     updateFormalite(f.id, {
       statut: "en-traitement",
       dateSoumission: now,
+      refINPI,
     });
     setFormalites((prev) =>
       prev.map((x) =>
-        x.id === f.id ? { ...x, statut: "en-traitement", dateSoumission: now } : x
+        x.id === f.id ? { ...x, statut: "en-traitement", dateSoumission: now, refINPI } : x
       )
     );
     setSubmittingId(null);
