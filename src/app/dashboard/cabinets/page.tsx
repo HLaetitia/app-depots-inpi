@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import {
   Briefcase,
   Building2,
@@ -325,9 +326,10 @@ export default function CabinetsPage() {
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {entreprises.map((ent) => (
-                            <div
+                            <Link
                               key={ent.id}
-                              className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-uf-border dark:border-uf-border-dark"
+                              href={`/dashboard/entreprises/${ent.id}`}
+                              className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-uf-border dark:border-uf-border-dark hover:border-uf-button-hover hover:bg-blue-50/50 dark:hover:bg-blue-950/30 transition-colors"
                             >
                               <div className="w-8 h-8 rounded-lg bg-uf-button-hover/10 dark:bg-uf-button-hover/20 flex items-center justify-center shrink-0">
                                 <Building2 className="w-4 h-4 text-uf-button-hover" />
@@ -340,7 +342,7 @@ export default function CabinetsPage() {
                                   SIREN : {ent.siren} · {ent.formeJuridique}
                                 </p>
                               </div>
-                            </div>
+                            </Link>
                           ))}
                         </div>
                       )}
@@ -383,7 +385,11 @@ export default function CabinetsPage() {
                             </thead>
                             <tbody className="divide-y divide-uf-border dark:divide-uf-border-dark">
                               {formalites.map((f) => (
-                                <tr key={f.id}>
+                                <tr
+                                  key={f.id}
+                                  className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                                  onClick={() => window.location.href = `/dashboard/formalites/${f.id}`}
+                                >
                                   <td className="py-2 font-mono text-xs text-uf-button-hover">
                                     {f.reference}
                                   </td>

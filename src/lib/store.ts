@@ -32,12 +32,40 @@ function readStore<T>(key: string): T | null {
   }
 }
 
+// ─── Canal de diffusion cross-tabs ───
+let broadcastChannel: BroadcastChannel | null = null;
+function getBroadcastChannel(): BroadcastChannel | null {
+  if (typeof window === "undefined") return null;
+  if (!broadcastChannel) {
+    try {
+      broadcastChannel = new BroadcastChannel("uf-store-sync");
+      broadcastChannel.onmessage = () => {
+        window.dispatchEvent(new Event("store-updated"));
+      };
+    } catch {
+      // BroadcastChannel non supporté
+    }
+  }
+  return broadcastChannel;
+}
+
+// Écouter les changements localStorage depuis d'autres onglets
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key && Object.values(KEYS).includes(e.key as typeof KEYS[keyof typeof KEYS])) {
+      window.dispatchEvent(new Event("store-updated"));
+    }
+  });
+}
+
 function writeStore<T>(key: string, data: T): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(key, JSON.stringify(data));
-    // Notifier les autres composants du changement
+    // Notifier les composants du même onglet
     window.dispatchEvent(new Event("store-updated"));
+    // Notifier les autres onglets via BroadcastChannel
+    getBroadcastChannel()?.postMessage("updated");
   } catch {
     console.error(`[Store] Erreur écriture localStorage pour ${key}`);
   }

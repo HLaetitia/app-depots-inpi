@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Plus, Search, FileText, Trash2, Paperclip } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -19,9 +20,18 @@ import {
 } from "@/types";
 
 export default function FormalitesPage() {
+  return (
+    <Suspense>
+      <FormalitesContent />
+    </Suspense>
+  );
+}
+
+function FormalitesContent() {
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
-  const [statutFilter, setStatutFilter] = useState("");
+  const [statutFilter, setStatutFilter] = useState(searchParams.get("statut") || "");
   const [formalites, setFormalites] = useState<Formalite[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Formalite | null>(null);
 

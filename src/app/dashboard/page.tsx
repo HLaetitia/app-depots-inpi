@@ -50,6 +50,7 @@ export default function DashboardPage() {
   const stats = [
     {
       label: "Brouillons",
+      statut: "brouillon",
       value: formalites.filter((f) => f.statut === "brouillon").length,
       icon: Clock,
       color: "text-gray-600 dark:text-gray-400",
@@ -57,6 +58,7 @@ export default function DashboardPage() {
     },
     {
       label: "En traitement INPI",
+      statut: "en-traitement",
       value: formalites.filter((f) => f.statut === "en-traitement").length,
       icon: Send,
       color: "text-blue-600 dark:text-blue-400",
@@ -64,6 +66,7 @@ export default function DashboardPage() {
     },
     {
       label: "Validées",
+      statut: "valide",
       value: formalites.filter((f) => f.statut === "valide").length,
       icon: CheckCircle2,
       color: "text-green-600 dark:text-green-400",
@@ -71,6 +74,7 @@ export default function DashboardPage() {
     },
     {
       label: "Rejetées",
+      statut: "rejete",
       value: formalites.filter((f) => f.statut === "rejete").length,
       icon: XCircle,
       color: "text-red-600 dark:text-red-400",
@@ -124,21 +128,23 @@ export default function DashboardPage() {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => (
-          <Card key={stat.label}>
-            <div className="flex items-center gap-4">
-              <div className={`p-3 rounded-lg ${stat.bg}`}>
-                <stat.icon className={`w-6 h-6 ${stat.color}`} />
+          <Link key={stat.label} href={`/dashboard/formalites?statut=${stat.statut}`}>
+            <Card className="cursor-pointer hover:ring-2 hover:ring-uf-button/30 transition-all">
+              <div className="flex items-center gap-4">
+                <div className={`p-3 rounded-lg ${stat.bg}`}>
+                  <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-uf-text dark:text-uf-text-dark">
+                    {stat.value}
+                  </p>
+                  <p className="text-sm text-uf-text-muted dark:text-uf-text-muted-dark">
+                    {stat.label}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-uf-text dark:text-uf-text-dark">
-                  {stat.value}
-                </p>
-                <p className="text-sm text-uf-text-muted dark:text-uf-text-muted-dark">
-                  {stat.label}
-                </p>
-              </div>
-            </div>
-          </Card>
+            </Card>
+          </Link>
         ))}
       </div>
 
