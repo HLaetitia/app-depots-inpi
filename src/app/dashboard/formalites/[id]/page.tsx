@@ -259,13 +259,13 @@ export default function FormaliteDetailPage({
   };
 
   // ─── Sauvegarder le contenu éditeur d'un document ───
-  const handleSaveDocumentContent = (contenu: string) => {
+  const handleSaveDocumentContent = (contenu: string, texteDocument: string) => {
     if (!formalite || !viewerDoc) return;
     const updatedDocs = (formalite.documents ?? []).map((d) =>
-      d.id === viewerDoc.id ? { ...d, contenu } : d
+      d.id === viewerDoc.id ? { ...d, contenu, texteDocument } : d
     );
     updateFormalite(formalite.id, { documents: updatedDocs });
-    setViewerDoc((prev) => (prev ? { ...prev, contenu } : null));
+    setViewerDoc((prev) => (prev ? { ...prev, contenu, texteDocument } : null));
   };
 
   if (loading) return null;

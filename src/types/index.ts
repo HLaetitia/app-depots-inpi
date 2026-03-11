@@ -71,6 +71,7 @@ export interface DocumentMeta {
   dateAjout: string;
   dataUrl?: string;
   contenu?: string;
+  texteDocument?: string;
 }
 
 export interface Formalite {
